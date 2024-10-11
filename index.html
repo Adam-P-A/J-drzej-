@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot AI - Jędrzej </title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+        }
+        #chatbox {
+            width: 400px;
+            height: 400px;
+            border: 1px solid white;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #userInput {
+            width: 400px;
+            padding: 10px;
+            border: 1px solid white;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            background-color: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        #learnedWordsList {
+            background-color: #333;
+            border: 1px solid white;
+            padding: 10px;
+            width: 400px;
+            height: auto;
+            max-height: 100px;
+            overflow-y: auto;
+            margin-top: 10px;
+            display: none; /* Ukryta na początku */
+            position: absolute;
+            left: 10px;
+            top: 130px; /* Przesunięcie w dół */
+        }
+        #wordsList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #commands {
+            background-color: #444;
+            padding: 10px;
+            margin-top: 10px;
+            width: 400px;
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 130px; /* Przesunięcie w dół */
+        }
+        #commandsList {
+            list-style-type: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatbot - Jędrzej Gej</h1>
+    <div id="chatbox"></div>
+    <input type="text" id="userInput" placeholder="Napisz coś...">
+    <button onclick="sendMessage()">Wyślij</button>
+    <button onclick="toggleWordsList()">Pokaż/Ukryj Znane Słowa</button>
+    <button onclick="toggleCommands()">Pokaż/Ukryj Komendy</button>
+
+    <div id="learnedWordsList">
+        <h2>Znane słowa:</h2>
+        <ul id="wordsList"></ul>
+    </div>
+
+    <div id="commands">
+        <h2>Odblokowane komendy:</h2>
+        <ul id="commandsList"></ul>
+    </div>
+
+    <script>
+        let learnedWords = [];
+        let predefinedResponses = [
+            "Cześć! Jak mogę Ci pomóc?",
+            "Interesujące pytanie!",
+            "Czy mógłbyś powiedzieć więcej?",
+            "Dziękuję za podzielenie się tym!",
+            "Nie rozumiem, spróbuj inaczej.",
+            "Jestem tu, aby pomóc!"
+        ];
+
+        let commands = [
+            "Kim jesteś?",
+            "Jak masz na imię?",
+            "Co lubisz robić?",
+            "Opowiedz żart!",
+            "Jak się czujesz?",
+            "Jaka jest twoja ulubiona książka?",
+            "Co sądzisz o pogodzie?",
+            "Opowiedz mi o filmie.",
+            "Czy masz zwierzęta?",
+            "Co robisz na co dzień?"
+        ];
+        
+        let commandResponses = {
+            "Kim jesteś?": "Jestem Jędrzejem, twoim Gejuszkiem!",
+            "Jak masz na imię?": "Nazywam się Jędrzej Gej.",
+            "Co lubisz robić?": "Lubię rozmawiać i uczyć się nowych rzeczy.",
+            "Opowiedz żart!": "Dlaczego komputer był zimny? Bo zostawił swoje okna otwarte!",
+            "Jak się czujesz?": "Czuję się dobrze i Gejowo, dziękuję!",
+            "Jaka jest twoja ulubiona książka?": "Moja ulubiona książka to '1984' George'a Orwella.",
+            "Co sądzisz o pogodzie?": "Pogoda jest zawsze interesująca do dyskusji!",
+            "Opowiedz mi o filmie.": "Lubię filmy o Gejach, są pełne przygód.",
+            "Czy masz zwierzęta?": "Nie mam zwierząt, ale lubię o nich rozmawiać!",
+            "Co robisz na co dzień?": "Codziennie sprawdzam jaki mam rozmiar, zazwyczaj 2cm ale jak zobacze chłopa to ah 4cm!!"
+        };
+        
+        let unlockedCommands = [];
+        let commandInterval;
+
+        // Funkcja do generowania zdania z poznanymi słowami
+        function generateSentence() {
+            const subjects = ["Ja", "Ty", "On", "Ona"];
+            const verbs = ["lubię", "chcę", "widzę", "czuję"];
+            const objects = ["pizzę", "film", "książkę", "muzykę"];
+
+            const subject = subjects[Math.floor(Math.random() * subjects.length)];
+            const verb = verbs[Math.floor(Math.random() * verbs.length)];
+            const object = objects[Math.floor(Math.random() * objects.length)];
+
+            return `${subject} ${verb} ${object}.`;
+        }
+
+        // Funkcja uczenia nowych słów
+        function learnNewWord(word) {
+            if (!learnedWords.includes(word)) {
+                learnedWords.push(word);
+                updateWordsList();
+            }
+        }
+
+        // Aktualizowanie listy poznanych słów
+        function updateWordsList() {
+            const wordsList = document.getElementById("wordsList");
+            wordsList.innerHTML = "";
+            learnedWords.forEach(word => {
+                const li = document.createElement("li");
+                li.textContent = word;
+                wordsList.appendChild(li);
+            });
+        }
+
+        // Funkcja do odblokowywania komend co pół minuty
+        function unlockCommands() {
+            if (unlockedCommands.length < commands.length) {
+                let command = commands[unlockedCommands.length];
+                unlockedCommands.push(command);
+                updateCommandsList();
+            }
+        }
+
+        // Aktualizowanie listy komend
+        function updateCommandsList() {
+            const commandsList = document.getElementById("commandsList");
+            commandsList.innerHTML = "";
+            unlockedCommands.forEach(command => {
+                const li = document.createElement("li");
+                li.textContent = command;
+                commandsList.appendChild(li);
+            });
+        }
+
+        // Rozwijanie/ukrywanie listy poznanych słów
+        function toggleWordsList() {
+            const list = document.getElementById("learnedWordsList");
+            list.style.display = list.style.display === "none" ? "block" : "none";
+        }
+
+        // Rozwijanie/ukrywanie listy komend
+        function toggleCommands() {
+            const list = document.getElementById("commands");
+            list.style.display = list.style.display === "none" ? "block" : "none";
+        }
+
+        // Uzyskanie odpowiedzi bota
+        function getBotResponse(input) {
+            const lowerInput = input.toLowerCase();
+
+            if (lowerInput.includes("ja jestem")) {
+                return `Użytkownik: ${learnedWords.join(", ")}`;
+            }
+
+            // Sprawdzanie komend
+            for (let command of unlockedCommands) {
+                if (lowerInput.includes(command.toLowerCase())) {
+                    return commandResponses[command] || "Przepraszam, nie mam na to odpowiedzi.";
+                }
+            }
+
+            if (lowerInput.includes("co lubisz") || lowerInput.includes("co chciałbyś")) {
+                return generateSentence();
+            }
+
+            learnNewWord(input);
+            const randomIndex = Math.floor(Math.random() * predefinedResponses.length);
+            let botResponse = predefinedResponses[randomIndex] || "Przepraszam, nie rozumiem.";
+
+            // 90% szans na dodanie poznanych słów do odpowiedzi w losowych miejscach
+            if (Math.random() < 0.9 && learnedWords.length > 0) {
+                let randomWords = learnedWords.sort(() => 0.5 - Math.random()).slice(0, Math.min(3, learnedWords.length));
+                const randomPosition = Math.floor(Math.random() * (botResponse.split(" ").length + 1));
+                botResponse = [...botResponse.split(" ")];
+                botResponse.splice(randomPosition, 0, ...randomWords);
+                botResponse = botResponse.join(" ");
+            }
+
+            return botResponse;
+        }
+
+        // Wysyłanie wiadomości
+        function sendMessage() {
+            const userInput = document.getElementById("userInput").value;
+            if (userInput.trim() === "") return;
+
+            const chatbox = document.getElementById("chatbox");
+            chatbox.innerHTML += `<p><strong>Ty:</strong> ${userInput}</p>`;
+            const botResponse = getBotResponse(userInput);
+            chatbox.innerHTML += `<p><strong>Jędrzej Gej:</strong> ${botResponse}</p>`;
+            document.getElementById("userInput").value = "";
+            chatbox.scrollTop = chatbox.scrollHeight; // Przewijanie do dołu
+        }
+
+        // Uruchomienie odblokowywania komend co 30 sekund
+        commandInterval = setInterval(unlockCommands, 30000);
+    </script>
+</body>
+</html>
